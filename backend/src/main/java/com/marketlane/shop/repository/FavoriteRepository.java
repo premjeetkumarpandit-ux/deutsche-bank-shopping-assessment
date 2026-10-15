@@ -1,5 +1,6 @@
-package com.marketlane.shop;
+package com.marketlane.shop.repository;
 
+import com.marketlane.shop.model.FavoriteItem;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

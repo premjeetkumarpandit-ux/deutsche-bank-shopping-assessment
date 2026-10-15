@@ -1,5 +1,8 @@
-package com.marketlane.shop;
+package com.marketlane.shop.service;
 
+import com.marketlane.shop.model.FavoriteItem;
+import com.marketlane.shop.repository.FavoriteRepository;
+import com.marketlane.shop.repository.ProductRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

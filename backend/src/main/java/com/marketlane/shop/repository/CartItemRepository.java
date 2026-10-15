@@ -1,5 +1,6 @@
-package com.marketlane.shop;
+package com.marketlane.shop.repository;
 
+import com.marketlane.shop.model.CartItem;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;

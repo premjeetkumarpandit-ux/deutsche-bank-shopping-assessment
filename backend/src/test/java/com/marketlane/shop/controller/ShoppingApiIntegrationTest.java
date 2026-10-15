@@ -1,5 +1,6 @@
-package com.marketlane.shop;
+package com.marketlane.shop.controller;
 
+import com.marketlane.shop.repository.CartItemRepository;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

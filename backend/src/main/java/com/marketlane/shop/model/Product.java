@@ -1,4 +1,4 @@
-package com.marketlane.shop;
+package com.marketlane.shop.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Entity;

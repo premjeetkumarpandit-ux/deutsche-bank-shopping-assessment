@@ -1,5 +1,9 @@
-package com.marketlane.shop;
+package com.marketlane.shop.service;
 
+import com.marketlane.shop.model.CartItem;
+import com.marketlane.shop.model.Product;
+import com.marketlane.shop.repository.CartItemRepository;
+import com.marketlane.shop.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;

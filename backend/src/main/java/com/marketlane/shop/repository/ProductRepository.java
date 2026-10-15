@@ -1,5 +1,6 @@
-package com.marketlane.shop;
+package com.marketlane.shop.repository;
 
+import com.marketlane.shop.model.Product;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;

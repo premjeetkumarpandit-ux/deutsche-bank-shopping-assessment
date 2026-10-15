@@ -1,4 +1,4 @@
-package com.marketlane.shop;
+package com.marketlane.shop.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

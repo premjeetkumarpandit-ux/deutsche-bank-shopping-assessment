@@ -1,5 +1,9 @@
-package com.marketlane.shop;
+package com.marketlane.shop.config;
 
+import com.marketlane.shop.model.FavoriteItem;
+import com.marketlane.shop.model.Product;
+import com.marketlane.shop.repository.FavoriteRepository;
+import com.marketlane.shop.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

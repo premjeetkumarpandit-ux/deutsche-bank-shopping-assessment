@@ -1,4 +1,4 @@
-package com.marketlane.shop;
+package com.marketlane.shop.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import com.marketlane.shop.model.CartItem;
+import com.marketlane.shop.model.Product;
+import com.marketlane.shop.repository.CartItemRepository;
+import com.marketlane.shop.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
