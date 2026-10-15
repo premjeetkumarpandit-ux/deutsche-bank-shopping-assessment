@@ -10,6 +10,7 @@ From Windows CMD at the repository root, start both applications with:
 
 ```cmd
 run-app.bat
+>>>cmd /c run-app.bat  
 ```
 
 The script runs `npm ci`, then opens separate terminals for the API and React UI. It uses `JAVA_HOME` when set, otherwise it looks for a JDK under the standard Program Files locations; Maven can be on `PATH` or installed under `%USERPROFILE%\.maven`.
