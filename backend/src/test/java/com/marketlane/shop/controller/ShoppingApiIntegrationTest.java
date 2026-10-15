@@ -56,6 +56,14 @@ class ShoppingApiIntegrationTest {
                 .andExpect(jsonPath("$").isEmpty());
     }
 
+        @Test
+        void justInFeedReturnsTheExpandedNewArrivalSet() throws Exception {
+                mvc.perform(get("/api/dashboard/new"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(8))
+                                .andExpect(jsonPath("$[0].isNew").value(true));
+        }
+
     @Test
     void cartCanBeAddedUpdatedAndRemoved() throws Exception {
         mvc.perform(post("/api/cart/items?userId=integration")

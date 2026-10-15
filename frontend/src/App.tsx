@@ -4,13 +4,18 @@ import { api } from './api'
 import { calculateVoucherDiscount } from './pricing'
 import type { Cart, Product, Voucher } from './types'
 
-type Section = 'liked' | 'vouchers' | 'popular' | 'new'
+type Section = 'shop' | 'vouchers'
+type ProductFeed = 'liked' | 'popular' | 'new'
 const navigation: { id: Section; label: string }[] = [
-  { id: 'liked', label: 'For you' },
+  { id: 'shop', label: 'Shop' },
   { id: 'vouchers', label: 'Offers' },
-  { id: 'popular', label: 'Most loved' },
-  { id: 'new', label: 'Just in' },
 ]
+const productFeeds: { id: ProductFeed; label: string; eyebrow: string; number: string }[] = [
+  { id: 'liked', label: 'For you', eyebrow: 'YOUR PERSONAL EDIT', number: '01' },
+  { id: 'popular', label: 'Most loved', eyebrow: 'THE CROWD FAVOURITES', number: '02' },
+  { id: 'new', label: 'Just in', eyebrow: 'FRESH OFF THE SHELF', number: '03' },
+]
+const emptyFeeds: Record<ProductFeed, Product[]> = { liked: [], popular: [], new: [] }
 const emptyCart: Cart = { items: [], total: 0, expiresAt: null }
 
 function money(amount: number) {
@@ -18,8 +23,8 @@ function money(amount: number) {
 }
 
 function App() {
-  const [section, setSection] = useState<Section>('liked')
-  const [products, setProducts] = useState<Product[]>([])
+  const [section, setSection] = useState<Section>('shop')
+  const [feeds, setFeeds] = useState(emptyFeeds)
   const [vouchers, setVouchers] = useState<Voucher[]>([])
   const [cart, setCart] = useState<Cart>(emptyCart)
   const [favoriteIds, setFavoriteIds] = useState<number[]>([])
@@ -37,19 +42,26 @@ function App() {
     let active = true
     setLoading(true)
     setError('')
-    const load = section === 'vouchers' ? api.vouchers() : api.products(section)
-    load.then((result) => {
-      if (!active) return
-      if (section === 'vouchers') setVouchers(result as Voucher[])
-      else setProducts(result as Product[])
-    }).catch((cause: Error) => active && setError(cause.message))
+    const load = section === 'vouchers'
+      ? api.vouchers().then((result) => {
+          if (active) setVouchers(result)
+        })
+      : Promise.all([
+          api.products('liked'),
+          api.products('popular'),
+          api.products('new'),
+        ]).then(([liked, popular, newest]) => {
+          if (!active) return
+          setFeeds({ liked, popular, new: newest })
+          setFavoriteIds(liked.map((product) => product.id))
+        })
+    load.catch((cause: Error) => active && setError(cause.message))
       .finally(() => active && setLoading(false))
     return () => { active = false }
   }, [section])
 
   useEffect(() => {
     api.cart().then(setCart).catch((cause: Error) => setError(cause.message))
-    api.products('liked').then((liked) => setFavoriteIds(liked.map((product) => product.id))).catch(() => {})
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(timer)
   }, [])
@@ -99,8 +111,11 @@ function App() {
       setFavoriteIds((current) => isFavorite
         ? current.filter((id) => id !== product.id)
         : [...current, product.id])
-      if (isFavorite && section === 'liked') {
-        setProducts((current) => current.filter((item) => item.id !== product.id))
+      if (isFavorite && section === 'shop') {
+        setFeeds((current) => ({
+          ...current,
+          liked: current.liked.filter((item) => item.id !== product.id),
+        }))
       }
       setError('')
     } catch (cause) {
@@ -108,10 +123,7 @@ function App() {
     }
   }
 
-  const visibleProducts = products.filter((product) =>
-    `${product.name} ${product.category}`.toLowerCase().includes(query.toLowerCase()))
   const cartCount = cart.items.reduce((sum, line) => sum + line.quantity, 0)
-  const heading = navigation.find((item) => item.id === section)?.label ?? 'For you'
   const selectedVoucher = vouchers.find((voucher) => voucher.code === selectedVoucherCode)
   const appliedVoucher = vouchers.find((voucher) => voucher.code === appliedVoucherCode)
   const selectedVoucherExpired = selectedVoucher ? new Date(selectedVoucher.validUntil).getTime() <= now : false
@@ -148,7 +160,7 @@ function App() {
             <p className="eyebrow"><span className="eyebrow-line" /> THE LONDON EDIT · NO. 04</p>
             <h1>Good things,<br /><em>close to home.</em></h1>
             <p className="hero-description">Thoughtful pieces from independent makers, picked for everyday living in the city.</p>
-            <button className="hero-link" onClick={() => setSection('popular')}>Explore what’s loved <ArrowRight size={16} /></button>
+            <button className="hero-link" onClick={() => { setSection('shop'); document.getElementById('collection')?.scrollIntoView({ behavior: 'smooth' }) }}>Explore what’s loved <ArrowRight size={16} /></button>
           </div>
           <div className="hero-image" role="img" aria-label="A sunlit still life of flowers and homewares">
             <div className="image-caption"><span>01 / 04</span><span>Small finds, big feeling</span><ArrowDownRight size={17} /></div>
@@ -156,18 +168,35 @@ function App() {
           <div className="hero-side-note">Made with care<br />in and around London</div>
         </section>
 
-        <section className="collection-section">
+        <section className="collection-section" id="collection">
           <div className="section-heading">
-            <div><p className="eyebrow">A LITTLE BIT OF GOOD</p><h2>{section === 'vouchers' ? 'A treat, on us.' : heading === 'For you' ? 'Picked with you in mind.' : `${heading}, lately.`}</h2></div>
+            <div><p className="eyebrow">A LITTLE BIT OF GOOD</p><h2>{section === 'vouchers' ? 'A treat, on us.' : 'Picked around your day.'}</h2></div>
             <p className="collection-intro">Independent labels, everyday favourites<br />and the things worth passing on.</p>
           </div>
           {error && <div className="status-banner" role="alert">{error}<button onClick={() => setError('')} aria-label="Dismiss error"><X size={16} /></button></div>}
           {section === 'vouchers' ? (
             <div className="voucher-grid">{loading ? <p className="loading-state">Finding your offers…</p> : vouchers.map((voucher) => <article className="voucher-ticket" key={voucher.code}><div className="ticket-top"><span>MARKET LANE · LONDON</span><Sparkles size={18} /></div><div className="ticket-discount">{voucher.discountLabel}</div><h3>{voucher.title}</h3><p>{voucher.description}</p><div className="ticket-code"><span>USE CODE</span><strong>{voucher.code}</strong><span>UNTIL {new Date(voucher.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span></div></article>)}</div>
           ) : (
-            <div className="product-grid">{loading ? <p className="loading-state">Setting out the good things…</p> : visibleProducts.map((product, index) => <ProductCard key={product.id} product={product} index={index} isFavorite={favoriteIds.includes(product.id)} onFavorite={() => toggleFavorite(product)} onAdd={() => refreshCart(api.add(product.id), 'Added to your bag')} />)}{!loading && visibleProducts.length === 0 && <p className="loading-state">Nothing here just yet. Try another search.</p>}</div>
+            <div className="dashboard-feed-grid">
+              {productFeeds.map((feed) => {
+                const feedProducts = feeds[feed.id].filter((product) =>
+                  `${product.name} ${product.category}`.toLowerCase().includes(query.toLowerCase()))
+                return (
+                  <section className={`dashboard-feed dashboard-feed-${feed.id}`} key={feed.id} aria-labelledby={`feed-${feed.id}`}>
+                    <div className="dashboard-feed-heading">
+                      <span className="feed-number">{feed.number}</span>
+                      <div><p className="eyebrow">{feed.eyebrow}</p><h3 id={`feed-${feed.id}`}>{feed.label}</h3></div>
+                    </div>
+                    {loading ? <p className="feed-loading">Finding your picks…</p> : feedProducts.length === 0
+                      ? <p className="feed-loading">No finds here yet.</p>
+                      : feed.id === 'new'
+                        ? <div className="new-arrivals-grid">{feedProducts.slice(0, 12).map((product) => <NewArrivalCard key={product.id} product={product} isFavorite={favoriteIds.includes(product.id)} onFavorite={() => toggleFavorite(product)} onAdd={() => refreshCart(api.add(product.id), 'Added to your bag')} />)}</div>
+                        : <div className="dashboard-feed-items">{feedProducts.slice(0, 4).map((product) => <DashboardProduct key={product.id} product={product} isFavorite={favoriteIds.includes(product.id)} onFavorite={() => toggleFavorite(product)} onAdd={() => refreshCart(api.add(product.id), 'Added to your bag')} />)}</div>}
+                  </section>
+                )
+              })}
+            </div>
           )}
-          {section !== 'vouchers' && <button className="text-link" onClick={() => setSection(section === 'new' ? 'popular' : 'new')}>See {section === 'new' ? 'what’s most loved' : 'what’s just arrived'} <ArrowRight size={16} /></button>}
         </section>
 
         <section className="local-note"><span className="local-number">L / 01</span><p>Good things travel better<br /><em>when they don’t travel far.</em></p><span className="local-detail">A London-only edit<br />of people doing it well.</span></section>
@@ -187,9 +216,42 @@ function formatTime(expiresAt: string | null, now: number) {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 }
 
-function ProductCard({ product, index, isFavorite, onFavorite, onAdd }: { product: Product; index: number; isFavorite: boolean; onFavorite: () => void; onAdd: () => void }) {
+function DashboardProduct({ product, isFavorite, onFavorite, onAdd }: { product: Product; isFavorite: boolean; onFavorite: () => void; onAdd: () => void }) {
   const discount = product.compareAtPrice > product.price
-  return <article className="product-card" style={{ animationDelay: `${index * 55}ms` }}><div className="product-image-wrap"><img className="product-image" src={product.imageUrl} alt={product.name} loading="lazy" />{discount && <span className="product-tag">A little less</span>}{product.isNew && !discount && <span className="product-tag new-tag">Just arrived</span>}<button className={isFavorite ? 'favorite-button is-favorite' : 'favorite-button'} onClick={onFavorite} aria-label={isFavorite ? `Remove ${product.name} from liked items` : `Save ${product.name}`} title={isFavorite ? 'Remove from your saved finds' : 'Save for later'}><Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} /></button><button className="quick-add" onClick={onAdd} aria-label={`Add ${product.name} to bag`}><Plus size={18} /></button></div><div className="product-details"><div className="product-category">{product.category}</div><h3>{product.name}</h3><p>{product.description}</p><div className="product-price"><strong>{money(product.price)}</strong>{discount && <del>{money(product.compareAtPrice)}</del>}</div></div></article>
+  return (
+    <article className="dashboard-product">
+      <img src={product.imageUrl} alt={product.name} loading="lazy" />
+      <div className="dashboard-product-info">
+        <span className="product-category">{product.category}</span>
+        <h4>{product.name}</h4>
+        <div className="dashboard-product-price"><strong>{money(product.price)}</strong>{discount && <del>{money(product.compareAtPrice)}</del>}</div>
+      </div>
+      <div className="dashboard-product-actions">
+        <button className={isFavorite ? 'dashboard-icon-button is-favorite' : 'dashboard-icon-button'} onClick={onFavorite} aria-label={isFavorite ? `Remove ${product.name} from liked items` : `Save ${product.name}`} title={isFavorite ? 'Remove from saved items' : 'Save for later'}><Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} /></button>
+        <button className="dashboard-icon-button add-to-bag" onClick={onAdd} aria-label={`Add ${product.name} to bag`} title="Add to bag"><Plus size={16} /></button>
+      </div>
+    </article>
+  )
+}
+
+function NewArrivalCard({ product, isFavorite, onFavorite, onAdd }: { product: Product; isFavorite: boolean; onFavorite: () => void; onAdd: () => void }) {
+  const discount = product.compareAtPrice > product.price
+  return (
+    <article className="new-arrival-card">
+      <div className="new-arrival-image">
+        <img src={product.imageUrl} alt={product.name} loading="lazy" />
+        <span className="new-arrival-tag">JUST IN</span>
+        <button className={isFavorite ? 'new-arrival-favorite is-favorite' : 'new-arrival-favorite'} onClick={onFavorite} aria-label={isFavorite ? `Remove ${product.name} from liked items` : `Save ${product.name}`} title={isFavorite ? 'Remove from saved items' : 'Save for later'}><Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} /></button>
+      </div>
+      <div className="new-arrival-details">
+        <span className="product-category">{product.category}</span>
+        <h4>{product.name}</h4>
+        <p>{product.description}</p>
+        <div className="new-arrival-price"><strong>{money(product.price)}</strong>{discount && <del>{money(product.compareAtPrice)}</del>}</div>
+        <button className="new-arrival-add" onClick={onAdd}><Plus size={16} /> Add to bag</button>
+      </div>
+    </article>
+  )
 }
 
 export default App

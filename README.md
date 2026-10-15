@@ -6,6 +6,14 @@ A focused online shopping application with a React storefront and a Spring Boot 
 
 Requirements: Node.js 20+, Java 17+, and Maven 3.9+.
 
+From Windows CMD at the repository root, start both applications with:
+
+```cmd
+run-app.bat
+```
+
+The script runs `npm ci`, then opens separate terminals for the API and React UI. It uses `JAVA_HOME` when set, otherwise it looks for a JDK under the standard Program Files locations; Maven can be on `PATH` or installed under `%USERPROFILE%\.maven`.
+
 Start the API from `backend`:
 
 ```powershell
@@ -15,7 +23,7 @@ mvn spring-boot:run
 Start the UI from `frontend` in another terminal:
 
 ```powershell
-npm install
+npm ci
 npm run dev
 ```
 
